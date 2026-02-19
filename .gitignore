@@ -6,6 +6,9 @@ nbproject/
 build/
 dist/
 
+#Datbase
+.db
+
 # Logs
 *.log
 
