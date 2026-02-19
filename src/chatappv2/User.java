@@ -4,7 +4,6 @@
  */
 package chatappv2;
 
-import chatappv2.Exceptions.InvalidCommandException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -28,8 +27,7 @@ class Helper{
             else{
                 return true;
             }
-        }else
-            System.out.println("Invalid command");
+        }
         return false;
     }
 }

@@ -1,7 +1,6 @@
 
 package chatappv2;
 
-import chatappv2.Exceptions.InvalidCommandException;
 import java.io.IOException;
 import java.util.*;
 import java.net.*;
