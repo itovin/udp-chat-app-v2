@@ -24,7 +24,7 @@ Sqlite
 7. If no user is selected. Server replies "No one can hears you"
 
 To run clients from CMD.
-1. Change directory to the classes folder of the project (D:\[user]\Java\Java - NetBeans\ChatAppv2\build\classes)
+1. Change directory to the classes folder of the project (Example: D:\[user]\Java\Java - NetBeans\ChatAppv2\build\classes)
 2. Enter "java chatappv2.User"
 
 #Future improvements
