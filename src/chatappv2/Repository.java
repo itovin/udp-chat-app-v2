@@ -8,18 +8,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public class Repository {
-     private static Map<String, InetSocketAddress> users = new ConcurrentHashMap<>();
+     private static Map<String, InetSocketAddress> activeUsers = new ConcurrentHashMap<>();
     private static Map<Integer, String> chattingWith = new ConcurrentHashMap<>();
-    private static Map<Integer, String> usernames = new ConcurrentHashMap<>();
+    private static Map<Integer, String> activePortAndUsernames = new ConcurrentHashMap<>();
     private static final int serverPort = 2000;
     
     
-    public void addUser(String username, InetSocketAddress address){
-        users.put(username, address);
+    public void addActiveUsers(String username, InetSocketAddress address){
+        activeUsers.put(username, address);
     }
     
     public void removeUser(String username, int port){
-        users.remove(username);
+        activeUsers.remove(username);
         chattingWith.remove(port);
         System.out.println(username + " logged out!");
     }
@@ -28,8 +28,9 @@ public class Repository {
         chattingWith.put(port, username);
     }
     
-    public void addUsername(int port, String username){
-        usernames.put(port, username);
+    public void addActivePortAndUsernames(int port, String username){
+        activePortAndUsernames.put(port, username);
+        System.out.println("added");
     }
     //=======================GETTER===============================
     
@@ -37,10 +38,10 @@ public class Repository {
         return chattingWith.get(port);
     }
     public String getUsername(int port){
-        return usernames.getOrDefault(port, "Port " + port);
+        return activePortAndUsernames.getOrDefault(port, "Port " + port);
     }
     public InetSocketAddress getAddressPort(String username){
-        return users.get(username);
+        return activeUsers.get(username);
     }
     
     public String getChattingWith(int port){
@@ -52,8 +53,12 @@ public class Repository {
         return serverPort;
     }
     
+    public Map<Integer, String> getActivePortAndUsernames(){
+        return activePortAndUsernames;
+    }
+    
     public String getAllUsers(String username){
-        Map<String, InetSocketAddress> availableUsers = new HashMap<>(users);
+        Map<String, InetSocketAddress> availableUsers = new HashMap<>(activeUsers);
         availableUsers.remove(username);
         if(availableUsers.isEmpty())
             return "No active user yet";

@@ -7,7 +7,7 @@ build/
 dist/
 
 #Datbase
-.db
+*.db
 
 # Logs
 *.log
