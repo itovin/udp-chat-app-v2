@@ -22,12 +22,12 @@ Sqlite
 5. Server will process the registration and login.
 6. Once logged in, user can start sending commands like "/list", "/w [username]", "/end"
 7. If no user is selected. Server replies "No one can hears you"
+8. History - user can enter "/history [username]" to get the history chat with the specified user
 
 To run clients from CMD.
 1. Change directory to the classes folder of the project (Example: D:\[user]\Java\Java - NetBeans\ChatAppv2\build\classes)
 2. Enter "java chatappv2.User"
 
 #Future improvements
-1. Actual database for users
-2. Chat history
-3. Report a user
+1. Fix bugs
+2. Report a user
