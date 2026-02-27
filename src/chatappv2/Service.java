@@ -10,8 +10,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-
+import org.mindrot.jbcrypt.BCrypt;
 
 public class Service {
     private final Repository repo;
@@ -89,7 +88,8 @@ public class Service {
     
     //===========================SENDING/RECEIVING===================
     public void displayMessageFromClient(DatagramSocket ds, DatagramPacket dp, String recipientUsername){
-        System.out.println(getUsername(dp.getPort()) + " to " + recipientUsername + ": " + new String(dp.getData(), 0, dp.getLength()));
+        if(isPortLoggedIn(dp.getPort()))
+            System.out.println(getUsername(dp.getPort()) + " to " + recipientUsername + ": " + new String(dp.getData(), 0, dp.getLength()));
     }
     
     public void sendToRecipient(DatagramSocket ds, DatagramPacket dp){
@@ -213,6 +213,26 @@ public class Service {
         else
             return false;
     }
+    
+    public boolean isPWMatched(String username, String password, DatagramSocket ds, DatagramPacket dp){
+        try(Connection con  = DriverManager.getConnection("jdbc:sqlite:chat.db");
+                PreparedStatement stm = con.prepareStatement("select password, status from users where username = ?")){
+            stm.setString(1, username);
+            ResultSet rs = stm.executeQuery();
+            if(rs.next())
+            {
+                if(BCrypt.checkpw(password, rs.getString("password")))
+                {
+                    if(rs.getString("status").equals("online"))
+                        sendToSender(ds, dp, "Server: Login failed. Account already logged in. Please logout from the other session first.");
+                    else return true;
+                }
+            }
+        } catch (SQLException ex) {
+            System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+        }
+        return false;
+    }
 
     public String extractUsername(String[] split) {
         return split[1];
@@ -240,6 +260,7 @@ public class Service {
     }
     
     public void register(String username, String password, DatagramSocket ds, DatagramPacket dp){
+        password = BCrypt.hashpw(password, BCrypt.gensalt());
         try(Connection con = DriverManager.getConnection("jdbc:sqlite:chat.db");
                     PreparedStatement stm = con.prepareStatement("insert into users (username, password, status) values (?, ?, 'offline')")){
             stm.setString(1, username);
@@ -247,31 +268,20 @@ public class Service {
             stm.executeUpdate();
             sendToSender(ds, dp, "Successfully registered as " + username);
         } catch (SQLException ex) {
-             System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
-         }
+            sendToSender(ds, dp, "Registration failed. Username is already registered");
+        }
     }
     
     public void login(String username, String password, DatagramSocket ds, DatagramPacket dp){
-        try(Connection con = DriverManager.getConnection("jdbc:sqlite:chat.db");
-                    PreparedStatement stm = con.prepareStatement("select status from users where username = ? and password = ?")){
-                stm.setString(1, username);
-                stm.setString(2, password);
-                ResultSet rs = stm.executeQuery();
-                if(rs.next()){
-                    if(rs.getString(1).equals("offline")){
-                        sendToSender(ds, dp, "Server: Login successful!");
-                        sendToSender(ds, dp, "Connected!");
-                        addActiveUsers(username, new InetSocketAddress(dp.getAddress(), dp.getPort()));
-                        addUsername(dp.getPort(), username);
-                    }
-                    else
-                        sendToSender(ds, dp, "Server: Login failed. " + username + " already logged in a different session. Please logout from existing session first");
-                }else
-                    sendToSender(ds, dp, "Server: Login failed. Invalid username or password");
+        if(isPWMatched(username, password, ds, dp)){
+            addActiveUsers(username, new InetSocketAddress(dp.getAddress(), dp.getPort()));
+            addUsername(dp.getPort(), username);
+            sendToSender(ds, dp, "Server: Login successful!");
+            sendToSender(ds, dp, "Connected!");
+            System.out.println("Port " + dp.getPort() + " logged in as " + username);
+        }else
+            sendToSender(ds, dp, "Server: Login failed. Invalid username or password");
                     
-        } catch (SQLException ex) {
-             System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
-         }
     }
     
     public void addMsgToDB(int senderID, int receiverID, String msg){

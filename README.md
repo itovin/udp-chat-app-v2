@@ -3,11 +3,13 @@
 #Description A very beginner simple UDP Chat System with a server that accepts commands, process the commands and routes message to the selected recipient.
 
 #Feature
-User Registration: actual registration with username and password saved on the database
-User list: User can enter command "/list" to get a list of all active users
-Select user to chat with: User can enter command "/w" followed by the desired other's username
-Logout: User can enter command "/end" to safely end the session
-Concurrent message listening
+-User Registration: actual registration with username and password saved on the database
+-User list: User can enter command "/list" to get a list of all active users
+-Select user to chat with: User can enter command "/w" followed by the desired other's username
+-Concurrent message listening
+-History. User can use "/history [username]" command to see entire history of message with [username]
+-Password hashing using BCrypt
+
 
 #Technologies
 Java
@@ -23,11 +25,18 @@ Sqlite
 6. Once logged in, user can start sending commands like "/list", "/w [username]", "/end"
 7. If no user is selected. Server replies "No one can hears you"
 8. History - user can enter "/history [username]" to get the history chat with the specified user
+7. If no user is selected. Server replies "No one hears you"
 
 To run clients from CMD.
 1. Change directory to the classes folder of the project (Example: D:\[user]\Java\Java - NetBeans\ChatAppv2\build\classes)
 2. Enter "java chatappv2.User"
 
 #Future improvements
+<<<<<<< HEAD
 1. Fix bugs
 2. Report a user
+=======
+1. Customized Exception handling
+2. Logout
+3. Unintentional disconnection handling
+>>>>>>> c81bef6 (Added JBCrypt library for password hashing. Will try adding customized)

@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public class Repository {
-     private static Map<String, InetSocketAddress> activeUsers = new ConcurrentHashMap<>();
+    private static Map<String, InetSocketAddress> activeUsers = new ConcurrentHashMap<>();
     private static Map<Integer, String> chattingWith = new ConcurrentHashMap<>();
     private static Map<Integer, String> activePortAndUsernames = new ConcurrentHashMap<>();
     private static final int serverPort = 2000;
@@ -30,7 +30,6 @@ public class Repository {
     
     public void addActivePortAndUsernames(int port, String username){
         activePortAndUsernames.put(port, username);
-        System.out.println("added");
     }
     //=======================GETTER===============================
     
