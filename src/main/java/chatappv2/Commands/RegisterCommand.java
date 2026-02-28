@@ -4,6 +4,7 @@ package chatappv2.Commands;
 import chatappv2.Service;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import org.json.JSONObject;
 
 public class RegisterCommand implements Command {
     private Service service;
@@ -16,17 +17,9 @@ public class RegisterCommand implements Command {
             return;
         }
         String msg = new String(dp.getData(), 0, dp.getLength());
-        String[] split = msg.split(" ");
-        if(split.length < 2){
-            service.sendToSender(ds, dp, "Please include your username");
-            return;
-        }
-        if(split.length > 3){
-            service.sendToSender(ds, dp, "Username can only have 1 word only");
-            return;
-        }
-        String username = split[1];
-        String password = split[2];
+        JSONObject msgJSON = new JSONObject(msg);
+        String username = msgJSON.getString("username");
+        String password = msgJSON.getString("password");
         service.register(username, password, ds, dp);
     }
 }

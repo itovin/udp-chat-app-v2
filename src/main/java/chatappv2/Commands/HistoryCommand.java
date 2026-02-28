@@ -4,6 +4,7 @@ package chatappv2.Commands;
 import chatappv2.Service;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import org.json.JSONObject;
 
 
 public class HistoryCommand implements Command {
@@ -14,16 +15,16 @@ public class HistoryCommand implements Command {
     
     public void execute(DatagramSocket ds, DatagramPacket dp){
         String msg = new String(dp.getData(), 0, dp.getLength());
-        String[] split = msg.split(" ");
-        if(split.length != 2)
+        JSONObject msgJSON = new JSONObject(msg);
+        String historyWith = msgJSON.optString("message");
+        if(historyWith.equals(""))
         {
             service.sendToSender(ds, dp, "Invalid use of \"/history\" command. Command must be followed by username");
             return;
         }
         String username = service.getUsername(dp.getPort());
-        String receiverUsername = split[1];
         int userID = service.getUserIdByUsername(username);
-        int receiverID = service.getUserIdByUsername(receiverUsername);
+        int receiverID = service.getUserIdByUsername(historyWith);
         service.sendToSender(ds, dp, service.getHistory(userID, receiverID));
     }
 }

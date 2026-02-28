@@ -9,8 +9,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.Scanner;
+import org.json.JSONObject;
 
 
 public class User {
@@ -19,13 +19,14 @@ public class User {
     private static final int serverPort = 2000;
     private static boolean isConnected = false;
     private static boolean isRunning = true;
+    private static String username;
+    private static String command;
     public static void main(String[] args){
         
         try(DatagramSocket ds = new DatagramSocket()){
             byte[] b = new byte[1024];
             DatagramPacket dp = new DatagramPacket(b, b.length);
             String startCommand = "";
-            
             
             System.out.println("Enter command \"/login [username]\" to start. No account yet? \"/register [username]\" to register.");
             
@@ -34,8 +35,8 @@ public class User {
                 if(isloginOrRegisterCommand(msg)){
                     System.out.print("Please enter your password: ");
                     String pw = scanner.nextLine();
-                    msg += " " + pw;
-                    ds.send(new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("localhost"), serverPort));
+                    byte[] msgByte = JSONToByteArr(credentialsJSON(command, username, pw));
+                    ds.send(new DatagramPacket(msgByte, msgByte.length, InetAddress.getByName("localhost"), serverPort));
                     ds.receive(dp);
                     msg = new String(dp.getData(), 0, dp.getLength());
                     System.out.println(msg);
@@ -64,8 +65,8 @@ public class User {
                 try {
                     String msg = scanner.nextLine();
                     if(!msg.equals("")){
-                        
-                        ds.send(new DatagramPacket(msg.getBytes(), msg.length(), InetAddress.getByName("localhost"), serverPort));
+                        byte[] msgByte = JSONToByteArr(msgJSON(msg));
+                        ds.send(new DatagramPacket(msgByte, msgByte.length, InetAddress.getByName("localhost"), serverPort));
                         if(msg.equals("/end")){
                             Thread.sleep(1000);
                             ds.close();
@@ -94,10 +95,54 @@ public class User {
             System.out.println("Please use command \"/login [username]\" to start. No account yet? Register using command \"/register[username]\" " );
             return false;
         }
-        if(split[0].equals("/login") || split[0].equals("/register"))
+        if(split[0].equals("/login") || split[0].equals("/register")){
+            splitCommandAndUsername(msg);
             return true;
-        
+        }
+        System.out.println("Please use command \"/login [username]\" to start. No account yet? Register using command \"/register[username]\" " );
         return false;
+    }
+    
+    public static JSONObject credentialsJSON(String command, String username, String password){
+        JSONObject creds = new JSONObject();
+        creds.put("command", command);
+        creds.put("username", username);
+        creds.put("password", password);
+        return creds;
+    }
+    
+    public static JSONObject msgJSON(String msg){
+        JSONObject msgJSON = new JSONObject();
+        if(msg.charAt(0) == '/'){
+            String[] split = msg.split(" ");
+            msgJSON.put("command", split[0]);
+            
+            if(split.length > 1){
+                StringBuilder sb = new StringBuilder(split[1]);
+                for(int i = 2; i < split.length; i++){
+                    sb.append(" ").append(split[i]);
+                }
+                msgJSON.put("message", sb);
+            }
+        }else
+            msgJSON.put("message", msg);
+        return msgJSON;
+    }
+    
+    public static byte[] JSONToByteArr(JSONObject json){
+        return json.toString().getBytes();
+    }
+    
+    public static void splitCommandAndMessage(String msg){
+        String[] split = msg.split(" ");
+        command = split[0];
+        username = split[1];
+        
+    }
+    public static void splitCommandAndUsername(String msg){
+        String[] split = msg.split(" ");
+        command = split[0];
+        username = split[1];
     }
     
 }

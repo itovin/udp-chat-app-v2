@@ -1,0 +1,11 @@
+chatappv2\Commands\HistoryCommand.class
+chatappv2\Commands\ListCommand.class
+chatappv2\Commands\DirectMessageCommand.class
+chatappv2\Repository.class
+chatappv2\ChatAppv2.class
+chatappv2\Service.class
+chatappv2\Commands\DirectMessage.class
+chatappv2\Commands\Command.class
+chatappv2\Commands\LoginCommand.class
+chatappv2\Commands\RegisterCommand.class
+chatappv2\User.class

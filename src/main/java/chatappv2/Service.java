@@ -11,6 +11,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.mindrot.jbcrypt.BCrypt;
+import org.json.JSONObject;
+
 
 public class Service {
     private final Repository repo;
@@ -93,15 +95,18 @@ public class Service {
     }
     
     public void sendToRecipient(DatagramSocket ds, DatagramPacket dp){
+        String msg = new String(dp.getData(), 0, dp.getLength());
+        JSONObject msgJSON = new JSONObject(msg);
+        String message = msgJSON.getString("message");
         String senderUsername = getUsername(dp.getPort());
-        String msg = senderUsername + ": " + new String(dp.getData(), 0, dp.getLength());
+        message = senderUsername + ": " + message;
         String recipientUsername = getRecipientUsername(dp.getPort());
         InetSocketAddress recipientAddress = getRecipient(recipientUsername);
         if(recipientAddress != null){
             try {
                 displayMessageFromClient(ds, dp, recipientUsername);
-                ds.send(new DatagramPacket(msg.getBytes(), msg.length(), recipientAddress.getAddress(), recipientAddress.getPort()));
-                addMsgToDB(getUserIdByUsername(senderUsername), getUserIdByUsername(recipientUsername), msg);
+                ds.send(new DatagramPacket(message.getBytes(), message.length(), recipientAddress.getAddress(), recipientAddress.getPort()));
+                addMsgToDB(getUserIdByUsername(senderUsername), getUserIdByUsername(recipientUsername), message);
             } catch (IOException ex) {
                 System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
             }
@@ -194,11 +199,11 @@ public class Service {
     
     public void selectReceiver(DatagramSocket ds, DatagramPacket dp){
         String msg = new String(dp.getData(), 0, dp.getLength());
-        String[] split = msg.split(" ");
+        JSONObject msgJSON = new JSONObject(msg);
         int userPort = dp.getPort();
-        String receiverUsername = extractUsername(split);
-        if(getRecipient(extractUsername(split)) == null){
-            sendToSender(ds, dp, "Server: Failed to connect to " + extractUsername(split) + ". User does not exist or offline");
+        String receiverUsername = msgJSON.optString("message");
+        if(getRecipient(receiverUsername) == null){
+            sendToSender(ds, dp, "Server: Failed to connect to " + receiverUsername + ". User does not exist or offline");
         }
         else{
             setChattingWith(dp.getPort(), receiverUsername);
@@ -271,13 +276,13 @@ public class Service {
             sendToSender(ds, dp, "Registration failed. Username is already registered");
         }
     }
-    
+        
     public void login(String username, String password, DatagramSocket ds, DatagramPacket dp){
         if(isPWMatched(username, password, ds, dp)){
-            addActiveUsers(username, new InetSocketAddress(dp.getAddress(), dp.getPort()));
-            addUsername(dp.getPort(), username);
             sendToSender(ds, dp, "Server: Login successful!");
             sendToSender(ds, dp, "Connected!");
+            addActiveUsers(username, new InetSocketAddress(dp.getAddress(), dp.getPort()));
+            addUsername(dp.getPort(), username);
             System.out.println("Port " + dp.getPort() + " logged in as " + username);
         }else
             sendToSender(ds, dp, "Server: Login failed. Invalid username or password");

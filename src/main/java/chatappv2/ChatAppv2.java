@@ -11,6 +11,8 @@ import chatappv2.Commands.RegisterCommand;
 import java.io.IOException;
 import java.util.*;
 import java.net.*;
+import org.json.JSONObject;
+
 
 
 
@@ -62,10 +64,11 @@ public class ChatAppv2 {
     
     public static String getCommand(DatagramPacket dp){
         String msg = new String(dp.getData(), 0, dp.getLength());
-        if(msg.charAt(0) != '/')
+        JSONObject msgJSON = new JSONObject(msg);
+        String command = msgJSON.optString("command");
+        if(command.equals(""))
             return "/whisper";
-        String[] split = msg.split(" ");
-        return split[0];
+        return command;
     }
     
     public static void executeCommand(DatagramSocket ds, DatagramPacket dp, Service service){
