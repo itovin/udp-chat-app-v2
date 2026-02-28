@@ -1,6 +1,9 @@
 
 package chatappv2.Commands;
 
+import Exceptions.InvalidCommandException;
+import Exceptions.InvalidCredentialsException;
+import Exceptions.UserAlreadyLoggedInException;
 import chatappv2.Service;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -13,15 +16,18 @@ public class LoginCommand implements Command {
         this.service = service;
     }
     
-    public void execute(DatagramSocket ds, DatagramPacket dp){
+    public void execute(DatagramSocket ds, DatagramPacket dp) throws InvalidCommandException{
         if(service.isPortLoggedIn(dp.getPort())){
-            service.sendToSender(ds, dp, "You are already logged in. Cannot use \"/login\" command.");
-            return;
+            throw new InvalidCommandException("You are already logged in. Cannot use \"/login\" command.");
         }
         String msg = new String(dp.getData(), 0, dp.getLength());
         JSONObject msgJSON = new JSONObject(msg);
         String username = msgJSON.getString("username");
         String password = msgJSON.getString("password");
-        service.login(username, password, ds, dp);
+        try {
+            service.login(username, password, ds, dp);
+        }catch (InvalidCredentialsException | UserAlreadyLoggedInException ex) {
+            service.sendToSender(ds, dp, ex.getMessage());
+        } 
     }
 }

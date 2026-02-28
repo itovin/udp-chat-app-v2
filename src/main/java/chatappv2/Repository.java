@@ -11,7 +11,6 @@ public class Repository {
     private static Map<String, InetSocketAddress> activeUsers = new ConcurrentHashMap<>();
     private static Map<Integer, String> chattingWith = new ConcurrentHashMap<>();
     private static Map<Integer, String> activePortAndUsernames = new ConcurrentHashMap<>();
-    private static final int serverPort = 2000;
     
     
     public void addActiveUsers(String username, InetSocketAddress address){
@@ -31,6 +30,19 @@ public class Repository {
     public void addActivePortAndUsernames(int port, String username){
         activePortAndUsernames.put(port, username);
     }
+    
+    public void removeActivePortAndUsername(int port){
+        activePortAndUsernames.remove(port);
+    }
+    
+    public void removeActiveUsers(String username){
+        activeUsers.remove(username);
+    }
+    
+    public boolean isUserOnline(String username){
+        return activeUsers.containsKey(username);
+    }
+    
     //=======================GETTER===============================
     
     public String getRecipientUsername(int port){
@@ -46,10 +58,6 @@ public class Repository {
     public String getChattingWith(int port){
         
         return chattingWith.containsKey(port) ? chattingWith.get(port) : "";
-    }
-    
-    public int getServerPort(){
-        return serverPort;
     }
     
     public Map<Integer, String> getActivePortAndUsernames(){

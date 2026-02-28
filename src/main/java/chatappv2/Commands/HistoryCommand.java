@@ -1,6 +1,7 @@
 
 package chatappv2.Commands;
 
+import Exceptions.InvalidCommandException;
 import chatappv2.Service;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -13,14 +14,13 @@ public class HistoryCommand implements Command {
         this.service = service;
     }
     
-    public void execute(DatagramSocket ds, DatagramPacket dp){
+    public void execute(DatagramSocket ds, DatagramPacket dp) throws InvalidCommandException{
         String msg = new String(dp.getData(), 0, dp.getLength());
         JSONObject msgJSON = new JSONObject(msg);
         String historyWith = msgJSON.optString("message");
         if(historyWith.equals(""))
         {
-            service.sendToSender(ds, dp, "Invalid use of \"/history\" command. Command must be followed by username");
-            return;
+            throw new InvalidCommandException("Invalid use of \"/history\" command. Command must be followed by username");
         }
         String username = service.getUsername(dp.getPort());
         int userID = service.getUserIdByUsername(username);

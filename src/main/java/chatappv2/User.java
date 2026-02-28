@@ -17,8 +17,6 @@ public class User {
         
     private static final Scanner scanner = new Scanner(System.in);
     private static final int serverPort = 2000;
-    private static boolean isConnected = false;
-    private static boolean isRunning = true;
     private static String username;
     private static String command;
     public static void main(String[] args){
@@ -46,11 +44,13 @@ public class User {
             }
             
             Thread thread = new Thread(() ->{
-               while(isRunning){
+               while(true){
                    try {
                        ds.receive(dp);
                        String msg = new String(dp.getData(), 0, dp.getLength());
                        System.out.println(msg);
+                       if(msg.equals("Server: You logged out successfully!"))
+                           System.exit(0);
                    } catch (IOException ex) {
                        break;
                        //System.getLogger(User.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
@@ -59,7 +59,7 @@ public class User {
             });
             
             thread.start();
-                      
+            
             
             while(true){
                 try {
@@ -67,14 +67,10 @@ public class User {
                     if(!msg.equals("")){
                         byte[] msgByte = JSONToByteArr(msgJSON(msg));
                         ds.send(new DatagramPacket(msgByte, msgByte.length, InetAddress.getByName("localhost"), serverPort));
-                        if(msg.equals("/end")){
+                        if(msg.equals("/logout")){
                             Thread.sleep(1000);
-                            ds.close();
-                            System.out.println("Logged out successfully");
-                            isRunning = false;
                             break;
                         }
-                        
                     }
                 } catch (IOException ex) {
                     System.out.println("Unable to send to the sever. Servery may be offline");

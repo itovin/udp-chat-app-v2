@@ -1,6 +1,9 @@
 
 package chatappv2;
 
+import Exceptions.InvalidCredentialsException;
+import Exceptions.InvalidRecipientException;
+import Exceptions.UserAlreadyLoggedInException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -43,6 +46,8 @@ public class Service {
         repo.addActivePortAndUsernames(port, username);
     }
     
+   
+    
     //=======================GETTER===============================
     
     public String getRecipientUsername(int port){
@@ -52,9 +57,6 @@ public class Service {
         return repo.getUsername(port);
     }
     
-    public int getServerPort(){
-        return repo.getServerPort();
-    }
     
     public InetSocketAddress getRecipient(String username){
         return repo.getAddressPort(username);
@@ -67,25 +69,6 @@ public class Service {
     
     public String getAllUsers(String username){
         return repo.getAllUsers(username);
-    }
-    
-    public String getLIST_CMD(){
-        return LIST_CMD;
-    }
-    public String getREGISTER_CMD(){
-        return REGISTER_CMD;
-    }
-    public String getLOGIN_CMD(){
-        return LOGIN_CMD;
-    }
-    public String getDM_CMD(){
-        return DM_CMD;
-    }
-    public String getLOGOUT_CMD(){
-        return LOGOUT_CMD;
-    }
-    public String getHISTORY_CMD(){
-        return HISTORY_CMD;
     }
     
     //===========================SENDING/RECEIVING===================
@@ -111,7 +94,7 @@ public class Service {
                 System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
             }
         }else{
-            sendToSender(ds, dp, "Server: Recipient not found");
+            sendToSender(ds, dp, "Server: Failed to send. User is not online or does not exist.");
         }
     }
     
@@ -130,62 +113,6 @@ public class Service {
     
     
     
-   /* public void identifyCommand(DatagramSocket ds, DatagramPacket dp){
-        String msg = new String(dp.getData(), 0, dp.getLength());
-        if(msg.charAt(0) != '/'){
-            if(getChattingWith(dp.getPort()).equals(""))
-                sendToSender(ds, dp, "Server: No one hears you");
-            else
-                sendToRecipient(ds, dp);
-            return;
-        }
-        if(msg.equals(LIST_CMD)){
-            sendToSender(ds, dp, getAllUsers(getUsername(dp.getPort())));
-            return;
-        }
-        if(msg.equals(LOGOUT_CMD)){
-            removeUser(getUsername(dp.getPort()), dp.getPort());
-            return;
-        }
-        
-        String[] split = msg.split(" ");
-        if(split.length < 2){
-            sendToSender(ds, dp, "Server: Invalid/Incomplete Command");
-            return;
-        }
-        if(split[0].equals(REGISTER_CMD)){
-            String username = extractUsername(split);
-            String password = extractPassword(split);
-            if(isUsernameAvailable(username)){
-                register(username, password, ds, dp);
-            }else
-                sendToSender(ds, dp, "Server: Username " + username + " is not avaiable!");
-        }
-        else if(split[0].equals(LOGIN_CMD)){
-            String username = extractUsername(split);
-            String password = extractPassword(split);
-            if(login(username, password, ds, dp)){
-                addActiveUsers(username, new InetSocketAddress(dp.getAddress(), dp.getPort()));
-                addActivePortAndUsernames(dp.getPort(), username);
-                sendToSender(ds, dp, "Server: You successfully registered as " + username + "!");
-                System.out.println(username + " logged in successfully! | " + dp.getAddress() + " | " + dp.getPort());
-            }
-        }
-        else if(split[0].equals(DM_CMD)){
-            if(getRecipient(extractUsername(split)) == null){
-                sendToSender(ds, dp, "Server: Failed to connect to " + extractUsername(split) + ". User does not exist or offline");
-            }
-            else{
-                setChattingWith(dp.getPort(), extractUsername(split));
-                System.out.println(getUsername(dp.getPort()) + " connected to " + getRecipientUsername(dp.getPort()));
-                sendToSender(ds, dp, "Server: You successfully connected to " + getRecipientUsername(dp.getPort()));
-            }
-        }else if(split[0].equals(HISTORY_CMD)){
-            String receiverUsername = split[1];
-            sendToSender(ds, dp, getHistory(getUserIdByUsername(getUsername(dp.getPort())), getUserIdByUsername(receiverUsername)));
-        }
-    }*/
-    
     public int getUserIdByUsername(String username){
         try(Connection con = DriverManager.getConnection("jdbc:sqlite:chat.db");
                 PreparedStatement stm = con.prepareStatement("select id from users where username = ?")){
@@ -197,11 +124,14 @@ public class Service {
         return -1;
     }
     
-    public void selectReceiver(DatagramSocket ds, DatagramPacket dp){
+    public void selectReceiver(DatagramSocket ds, DatagramPacket dp) throws InvalidRecipientException{
         String msg = new String(dp.getData(), 0, dp.getLength());
         JSONObject msgJSON = new JSONObject(msg);
         int userPort = dp.getPort();
+        String username = getUsername(userPort);
         String receiverUsername = msgJSON.optString("message");
+        if(username.equals(receiverUsername))
+            throw new InvalidRecipientException("Invalid recipient. Cannot choose yourself as recipient");
         if(getRecipient(receiverUsername) == null){
             sendToSender(ds, dp, "Server: Failed to connect to " + receiverUsername + ". User does not exist or offline");
         }
@@ -213,10 +143,7 @@ public class Service {
     }
     
     public boolean isPortLoggedIn(int userPort){
-        if(repo.getActivePortAndUsernames().containsKey(userPort))
-            return true;
-        else
-            return false;
+        return repo.getActivePortAndUsernames().containsKey(userPort);
     }
     
     public boolean isPWMatched(String username, String password, DatagramSocket ds, DatagramPacket dp){
@@ -237,6 +164,10 @@ public class Service {
             System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
         }
         return false;
+    }
+    
+    public boolean isRecipientOnline(String recipientUsername){
+        return repo.isUserOnline(recipientUsername);
     }
 
     public String extractUsername(String[] split) {
@@ -277,15 +208,19 @@ public class Service {
         }
     }
         
-    public void login(String username, String password, DatagramSocket ds, DatagramPacket dp){
-        if(isPWMatched(username, password, ds, dp)){
-            sendToSender(ds, dp, "Server: Login successful!");
-            sendToSender(ds, dp, "Connected!");
-            addActiveUsers(username, new InetSocketAddress(dp.getAddress(), dp.getPort()));
-            addUsername(dp.getPort(), username);
-            System.out.println("Port " + dp.getPort() + " logged in as " + username);
-        }else
-            sendToSender(ds, dp, "Server: Login failed. Invalid username or password");
+    public void login(String username, String password, DatagramSocket ds, DatagramPacket dp) throws UserAlreadyLoggedInException, InvalidCredentialsException{
+        if(!isPWMatched(username, password, ds, dp))
+            throw new InvalidCredentialsException("Server: Login failed. Invalid username or password");
+        
+        if(isDuplicateLogin(username))
+            throw new UserAlreadyLoggedInException("User is already logged in. Please logout from the current session first.");
+        sendToSender(ds, dp, "Server: Logged in successful!");
+        sendToSender(ds, dp, "Connected!");
+        addActiveUsers(username, new InetSocketAddress(dp.getAddress(), dp.getPort()));
+        addUsername(dp.getPort(), username);
+        System.out.println("Port " + dp.getPort() + " logged in as " + username);
+        updateDBStatus(username, "online");
+        
                     
     }
     
@@ -320,4 +255,40 @@ public class Service {
         }
         return "History not found!";
     }
+    
+    
+    public void logout(DatagramSocket ds, DatagramPacket dp){
+        int userPort = dp.getPort();
+        String username = getUsername(dp.getPort());
+        repo.removeActivePortAndUsername(userPort);
+        repo.removeActiveUsers(username);
+        updateDBStatus(username, "offline");
+        sendToSender(ds, dp, "Server: You logged out successfully!");
+        System.out.println(username + " at port " + userPort + " logged out!");
+    }
+    
+    public boolean isDuplicateLogin(String username){
+        try(Connection con = DriverManager.getConnection("jdbc:sqlite:chat.db");
+                PreparedStatement stm = con.prepareStatement("select status from users where username = ?")){
+            stm.setString(1, username);
+            ResultSet rs = stm.executeQuery();
+            if(rs.getString("status").equals("online"))
+                return true;
+        } catch (SQLException ex) {
+            System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+        }
+        return false;
+    }
+    
+    public void updateDBStatus(String username, String status){
+        try(Connection con = DriverManager.getConnection("jdbc:sqlite:chat.db");
+                PreparedStatement stm = con.prepareStatement("update users set status = ? where username = ?")){
+            stm.setString(1, status);
+            stm.setString(2, username);
+            stm.executeUpdate();
+        } catch (SQLException ex) {
+            System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+        }
+    }
+    
 }
