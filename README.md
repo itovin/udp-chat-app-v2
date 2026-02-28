@@ -9,6 +9,8 @@
 -Concurrent message listening
 -History. User can use "/history [username]" command to see entire history of message with [username]
 -Password hashing using BCrypt
+-Logout: user can use "logout" command to logout. Logout will terminate the client
+-Heartbeat: Client automatically logsout after 5 mins of inactivity
 
 
 #Technologies
@@ -32,11 +34,5 @@ To run clients from CMD.
 2. Enter "java chatappv2.User"
 
 #Future improvements
-<<<<<<< HEAD
-1. Fix bugs
-2. Report a user
-=======
-1. Customized Exception handling
-2. Logout
-3. Unintentional disconnection handling
->>>>>>> c81bef6 (Added JBCrypt library for password hashing. Will try adding customized)
+1. Unintentional disconnection handling
+
