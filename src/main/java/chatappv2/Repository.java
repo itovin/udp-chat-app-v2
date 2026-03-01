@@ -57,7 +57,7 @@ public class Repository {
     
     public String getChattingWith(int port){
         
-        return chattingWith.containsKey(port) ? chattingWith.get(port) : "";
+        return chattingWith.getOrDefault(port, "");
     }
     
     public Map<Integer, String> getActivePortAndUsernames(){

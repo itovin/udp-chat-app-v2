@@ -60,7 +60,6 @@ public class User {
             
             thread.start();
             
-            
             while(true){
                 try {
                     String msg = scanner.nextLine();

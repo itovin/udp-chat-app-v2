@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.mindrot.jbcrypt.BCrypt;
@@ -47,6 +48,13 @@ public class Service {
     }
     
    
+    public void removeActiveUsers(String username) {
+        repo.removeActiveUsers(username);
+    }
+
+    public void removeActivePortAndUsername(int userPort) {
+        repo.removeActivePortAndUsername(userPort);
+    }
     
     //=======================GETTER===============================
     
@@ -87,7 +95,7 @@ public class Service {
         InetSocketAddress recipientAddress = getRecipient(recipientUsername);
         if(recipientAddress != null){
             try {
-                displayMessageFromClient(ds, dp, recipientUsername);
+                //displayMessageFromClient(ds, dp, recipientUsername);
                 ds.send(new DatagramPacket(message.getBytes(), message.length(), recipientAddress.getAddress(), recipientAddress.getPort()));
                 addMsgToDB(getUserIdByUsername(senderUsername), getUserIdByUsername(recipientUsername), message);
             } catch (IOException ex) {
@@ -101,7 +109,7 @@ public class Service {
     public void sendToSender(DatagramSocket ds, DatagramPacket dp, String msg){
         try {
             ds.send(new DatagramPacket(msg.getBytes(), msg.length(), dp.getAddress(), dp.getPort()));
-            displayMessageFromClient(ds, dp, "Server");
+            //displayMessageFromClient(ds, dp, "Server");
         } catch (IOException ex) {
             System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
         }
@@ -214,7 +222,7 @@ public class Service {
         
         if(isDuplicateLogin(username))
             throw new UserAlreadyLoggedInException("User is already logged in. Please logout from the current session first.");
-        sendToSender(ds, dp, "Server: Logged in successful!");
+        sendToSender(ds, dp, "Server: Login successful!");
         sendToSender(ds, dp, "Connected!");
         addActiveUsers(username, new InetSocketAddress(dp.getAddress(), dp.getPort()));
         addUsername(dp.getPort(), username);
@@ -260,12 +268,13 @@ public class Service {
     public void logout(DatagramSocket ds, DatagramPacket dp){
         int userPort = dp.getPort();
         String username = getUsername(dp.getPort());
-        repo.removeActivePortAndUsername(userPort);
-        repo.removeActiveUsers(username);
+        removeActivePortAndUsername(userPort);
+        removeActiveUsers(username);
         updateDBStatus(username, "offline");
         sendToSender(ds, dp, "Server: You logged out successfully!");
         System.out.println(username + " at port " + userPort + " logged out!");
     }
+
     
     public boolean isDuplicateLogin(String username){
         try(Connection con = DriverManager.getConnection("jdbc:sqlite:chat.db");
@@ -286,6 +295,16 @@ public class Service {
             stm.setString(1, status);
             stm.setString(2, username);
             stm.executeUpdate();
+        } catch (SQLException ex) {
+            System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+        }
+    }
+    
+    public void setAllUsersToOffline(){
+        try(Connection con = DriverManager.getConnection("jdbc:sqlite:chat.db");
+                Statement stm = con.createStatement()){
+            stm.executeUpdate("update users set status='offline'");
+            System.out.println("Setting status of all users to offline.");
         } catch (SQLException ex) {
             System.getLogger(Service.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
         }

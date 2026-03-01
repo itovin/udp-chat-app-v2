@@ -47,6 +47,8 @@ public class ChatAppv2 {
                         int userPort = dp.getPort();
                         hb.updateHeartBeat(userPort, System.currentTimeMillis());
                         hb.updateDps(userPort, dp);
+                        String recipientUsername = service.getRecipientUsername(dp.getPort());
+                        service.displayMessageFromClient(ds, dp, recipientUsername);
                         executeCommand(ds, dp, service);
                         
                         //service.identifyCommand(ds, dp);
@@ -61,12 +63,13 @@ public class ChatAppv2 {
                while(true){
                    long currentTime = System.currentTimeMillis();
                    hb.getHeartBeat().entrySet().stream()
-                           .filter(entry -> currentTime - entry.getValue() > 30_000)
+                           .filter(entry -> currentTime - entry.getValue() > 300_000)
                            .map(entry -> entry.getKey())
                            .forEach(port ->{
                                DatagramPacket dp = hb.getDps().get(port);
-                               service.sendToSender(ds, dp, "Server: You are being logged out automatically due to being inactive for 5 mins.");
                                service.logout(ds, dp);
+                               service.sendToSender(ds, dp, "Server: You are being logged out automatically due to being inactive for 5 mins.");
+                               System.out.println("Logged out port " + port + " automatically due to inactivity for 5 mins.");
                                hb.removeHeartBeatPort(dp.getPort());
                                hb.removeDpsPort(dp.getPort());
                            });
@@ -79,6 +82,7 @@ public class ChatAppv2 {
             });
             hbThread.start();
             
+            service.setAllUsersToOffline();
             System.out.println("================Server Started====================");
             
             while(true){
