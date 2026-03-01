@@ -67,8 +67,8 @@ public class ChatAppv2 {
                            .map(entry -> entry.getKey())
                            .forEach(port ->{
                                DatagramPacket dp = hb.getDps().get(port);
-                               service.logout(ds, dp);
                                service.sendToSender(ds, dp, "Server: You are being logged out automatically due to being inactive for 5 mins.");
+                               service.logout(ds, dp);
                                System.out.println("Logged out port " + port + " automatically due to inactivity for 5 mins.");
                                hb.removeHeartBeatPort(dp.getPort());
                                hb.removeDpsPort(dp.getPort());

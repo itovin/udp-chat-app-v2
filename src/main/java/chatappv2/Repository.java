@@ -46,7 +46,7 @@ public class Repository {
     //=======================GETTER===============================
     
     public String getRecipientUsername(int port){
-        return chattingWith.get(port);
+        return chattingWith.getOrDefault(port, "Server");
     }
     public String getUsername(int port){
         return activePortAndUsernames.getOrDefault(port, "Port " + port);
