@@ -1,4 +1,4 @@
-<img width="1105" height="192" alt="image" src="https://github.com/user-attachments/assets/786ff570-e21e-4771-a720-208f8131d092" />#Console based UDP Chat
+#Console based UDP Chat
  -Simple Chat app with a server that can handle multiple clients.
 
 ##Feature
